@@ -444,7 +444,7 @@ if __name__ == "__main__":
         cache_library(get_web_api_oauth(), args.out)
     elif args.command == "playlist":
         title = args.title
-        with open(args.file, "r") as f:
+        with open(args.in, "r") as f:
             ids = f.readlines()
         ids = ["spotify:track:" + x.strip() for x in ids]
         create_playlist(get_web_api_oauth(), title, ids)
