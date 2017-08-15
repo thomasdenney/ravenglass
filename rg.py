@@ -4,6 +4,7 @@ REDIRECT_URI = "http://localhost:3000/callback"
 
 import requests, requests.auth, json, sys, shutil, subprocess, time
 import tty, termios
+import argparse
 from threading import Thread
 from string import ascii_lowercase
 from random import choice
@@ -16,10 +17,37 @@ import AppKit
 info = AppKit.NSBundle.mainBundle().infoDictionary()
 info["LSBackgroundOnly"] = "1"
 
+parser = argparse.ArgumentParser(prog="Ravenglass", description="Spotify CLI")
+parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose output")
+parser.add_argument("-c", "--config_dir", default="~/.config/ravenglass", help="Configuration directory")
+
+subparsers = parser.add_subparsers(help="Commands", dest="command")
+
+what_parser = subparsers.add_parser('what', help="Get current song")
+what_parser.add_argument("-j", "--json", default=False, action="store_true", help="Output as JSON")
+
+serve_parser = subparsers.add_parser('serve', help="Run web server for personal token")
+watch_parser = subparsers.add_parser('watch', help="Interactive mode")
+
+cache_parser = subparsers.add_parser("cache", help="Cache library as JSON")
+cache_parser.add_argument("--out", help="Destination file")
+
+playlist_parser = subparsers.add_parser("playlist", help="Create playlist")
+playlist_parser.add_argument("--title", help="Playlist title")
+playlist_parser.add_argument("--in", help="Filename for list of IDs")
+
+singles_parser = subparsers.add_parser("singles", help="Create playlist of single saved songs")
+singles_parser.add_argument("--title", default="Single Songs", help="Playlist title")
+singles_parser.add_argument("--limit", default=1, type=int, help="Max saved songs per album")
+
+save_parser = subparsers.add_parser("save", help="Save the current song")
+
+args = parser.parse_args()
+
 from configparser import ConfigParser
 
 def config_dir():
-    return join(expanduser("~"), ".config", "ravenglass")
+    return expanduser(args.config_dir)
 
 config = ConfigParser()
 config.read(join(config_dir(), "config.ini"))
@@ -382,15 +410,16 @@ oauth_token = get_oauth_token()
 csrf_token = get_csrf_token()
 current = get_status(oauth_token, csrf_token)
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == "serve":
+if __name__ == "__main__":
+    if args.command == "serve":
         print("Open a browser at http://localhost:3000 and follow the instructions")
         app.run(port=3000)
-    elif sys.argv[1] == "what":
-        print_current(current)
-    elif sys.argv[1] == "json":
-        print(json.dumps(current, indent=2, sort_keys=True, separators=(',',': ')))
-    elif sys.argv[1] == "watch":
+    elif args.command == "what":
+        if args.json:
+            print(json.dumps(current, indent=2, sort_keys=True, separators=(',',': ')))
+        else:
+            print_current(current)
+    elif args.command == "watch":
         configure_terminal_for_single_char_input()
         t = Thread(target=watch, args=(oauth_token, csrf_token,))
         t.start()
@@ -411,24 +440,18 @@ if len(sys.argv) > 1:
             elif ch == 's':
                 save_song(get_web_api_oauth(), get_track_id(get_status(oauth_token, csrf_token)))
         restore_terminal_settings()
-    elif sys.argv[1] == "cache":
-        cache_library(get_web_api_oauth(), sys.argv[2])
-    elif sys.argv[1] == "playlist":
-        title = sys.argv[2]
-        with open(sys.argv[3], "r") as f:
+    elif args.command == "cache":
+        cache_library(get_web_api_oauth(), args.out)
+    elif args.command == "playlist":
+        title = args.title
+        with open(args.file, "r") as f:
             ids = f.readlines()
         ids = ["spotify:track:" + x.strip() for x in ids]
         create_playlist(get_web_api_oauth(), title, ids)
-    elif sys.argv[1] == "singles":
+    elif args.command == "singles":
         auth = get_web_api_oauth()
-        if len(sys.argv) >= 4:
-            create_singles_playlist(auth, int(sys.argv[2]), sys.argv[3])
-        elif len(sys.argv) >= 3:
-            create_singles_playlist(auth, int(sys.argv[2]))
-        else:
-            create_singles_playlist(get_web_api_oauth())
-else:
-    track_id = get_track_id(current)
-    print_current(current)
-    print("Track ID = %s" % track_id)
-    save_song(get_web_api_oauth(), track_id)
+        create_singles_playlist(get_web_api_oauth(), args.limit, args.title)
+    elif args.command == "save":
+        track_id = get_track_id(current)
+        print_current(current)
+        save_song(get_web_api_oauth(), track_id)

@@ -29,14 +29,13 @@ CLIENT_SECRET = your application client secret
 
 ## Usage
 
-Run `./rg.py` to save the currently playing song. Other options include caching
-data on all your songs as JSON, watch Spotify with an interactive UI, creating
-playlists from lists of song IDs, and create automatic playlists from single
-songs, etc.
+Run `./rg.py save` to save the currently playing song. Other options include
+caching data on all your songs as JSON, watch Spotify with an interactive UI,
+creating playlists from lists of song IDs, and create automatic playlists from
+single songs, etc. You can view all the options by running `./rg.py --help`.
 
 ## TODO
 
 * [ ] Break up into separate files
 * [ ] Rewrite server logic
 * [ ] Generalise API access
-* [ ] Move
