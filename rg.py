@@ -19,7 +19,7 @@ info["LSBackgroundOnly"] = "1"
 
 parser = argparse.ArgumentParser(prog="Ravenglass", description="Spotify CLI")
 parser.add_argument("-v", "--verbose", default=False, action="store_true", help="Verbose output")
-parser.add_argument("-c", "--config_dir", default="~/.config/ravenglass", help="Configuration directory")
+parser.add_argument("-c", "--config_dir", default=expanduser("~/.config/ravenglass"), help="Configuration directory")
 
 subparsers = parser.add_subparsers(help="Commands", dest="command")
 
@@ -46,11 +46,8 @@ args = parser.parse_args()
 
 from configparser import ConfigParser
 
-def config_dir():
-    return expanduser(args.config_dir)
-
 config = ConfigParser()
-config.read(join(config_dir(), "config.ini"))
+config.read(join(args.config_dir, "config.ini"))
 CLIENT_ID = config['WEB_API']['CLIENT_ID']
 CLIENT_SECRET = config['WEB_API']['CLIENT_SECRET']
 
@@ -84,7 +81,7 @@ def fast_get_position():
     return float(spotify_command("get the player position"))
 
 def token_file_name():
-    return join(config_dir(), 'usertoken.txt')
+    return join(args.config_dir, 'usertoken.txt')
 
 @app.route('/')
 def homepage():
