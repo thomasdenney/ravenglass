@@ -34,7 +34,7 @@ cache_parser.add_argument("--out", help="Destination file")
 
 playlist_parser = subparsers.add_parser("playlist", help="Create playlist")
 playlist_parser.add_argument("--title", help="Playlist title")
-playlist_parser.add_argument("--in", help="Filename for list of IDs")
+playlist_parser.add_argument("--file", help="Filename for list of IDs")
 
 singles_parser = subparsers.add_parser("singles", help="Create playlist of single saved songs")
 singles_parser.add_argument("--title", default="Single Songs", help="Playlist title")
@@ -444,7 +444,7 @@ if __name__ == "__main__":
         cache_library(get_web_api_oauth(), args.out)
     elif args.command == "playlist":
         title = args.title
-        with open(args.in, "r") as f:
+        with open(args.file, "r") as f:
             ids = f.readlines()
         ids = ["spotify:track:" + x.strip() for x in ids]
         create_playlist(get_web_api_oauth(), title, ids)
