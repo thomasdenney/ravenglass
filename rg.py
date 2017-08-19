@@ -115,7 +115,7 @@ def watch():
                 current_is_saved = api.is_saved(new_current["id"])
                 if current_is_saved:
                     known_saved.add(new_current["id"])
-                else:
+                elif new_current["id"] in known_saved:
                     known_saved.remove(new_current["id"])
 
             current = new_current
