@@ -36,6 +36,4 @@ single songs, etc. You can view all the options by running `./rg.py --help`.
 
 ## TODO
 
-* [ ] Break up into separate files
-* [ ] Rewrite server logic
 * [ ] Generalise API access
