@@ -1,4 +1,4 @@
-# Ravenglass: A Spotify CLI
+![](banner.png)
 
 Ravenglass allows you to control the Spotify desktop player and interact with
 the web API. It currently only supports Python 3 and macOS.
