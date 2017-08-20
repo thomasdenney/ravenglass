@@ -85,44 +85,15 @@ def fetch_library(auth, log=False, break_early=False):
             break
     return all_songs
 
-def print_current(current, include_time=True, start_time=localtime(), saved=False, include_newline=False):
+def print_current(current, include_time=True, start_time=localtime(), saved=False, include_newline=False, include_pos=True):
     width = shutil.get_terminal_size().columns
-    sys.stdout.write("\r" + songfmt.format_song(current, width, include_time,
-        start_time, saved))
+    sys.stdout.write("\r" + songfmt.format_song(current, width, include_time, start_time, saved, include_pos))
     if include_newline:
         sys.stdout.write("\n")
     sys.stdout.flush()
 
 watching = True
 known_saved = set()
-
-def watch():
-    global current
-    global current_is_saved
-    t = localtime()
-    current_is_saved = api.is_saved(current["id"])
-    if current_is_saved:
-        known_saved.add(current["id"])
-    print_current(current, start_time = t, saved=current_is_saved)
-    while watching:
-        new_current = interapp.get_current()
-        if current != None and new_current != None:
-            if current["id"] != new_current["id"]:
-                # Print the previous song after it has finished playing
-                print_current(current, include_time=False, start_time=t, saved=current["id"] in known_saved)
-                sys.stdout.write("\n")
-                t = localtime()
-                current_is_saved = api.is_saved(new_current["id"])
-                if current_is_saved:
-                    known_saved.add(new_current["id"])
-                elif new_current["id"] in known_saved:
-                    known_saved.remove(new_current["id"])
-
-            current = new_current
-            print_current(current, include_time=True, start_time=t, saved= current["id"] in known_saved)
-            sleep(1 - (current['position'] - floor(current['position'])))
-        else:
-            sleep(60) # Wait a minute; Spotify may not be open
 
 def configure_terminal_for_single_char_input():
     fd = sys.stdin.fileno()
@@ -146,17 +117,17 @@ def watch():
         if current != None and new_current != None:
             if current["id"] != new_current["id"]:
                 # Print the previous song after it has finished playing
-                print_current(current, include_time=False, start_time=t, saved=current["id"] in known_saved)
+                print_current(current, start_time=t, saved=current["id"] in known_saved, include_pos=False)
                 sys.stdout.write("\n")
                 t = localtime()
                 current_is_saved = api.is_saved(new_current["id"])
                 if current_is_saved:
                     known_saved.add(new_current["id"])
                 else:
-                    known_saved.remove(new_current["id"])
+                    known_saved.discard(new_current["id"])
 
             current = new_current
-            print_current(current, include_time=True, start_time=t, saved= current["id"] in known_saved)
+            print_current(current, start_time=t, saved= current["id"] in known_saved)
             sleep(1 - (current['position'] - floor(current['position'])))
         else:
             sleep(60) # Wait a minute; Spotify may not be open

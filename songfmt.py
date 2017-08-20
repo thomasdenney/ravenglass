@@ -41,12 +41,14 @@ def format_song(song, width, include_time=True, start_time=localtime(), saved=Fa
     duration = duration_string(song['duration']) + " "
 
     time_str = ""
-    if include_pos:
-        time_str = duration_string(song['position']) + " "
     if include_time:
         time_str += "[{}] ".format(strftime("%H:%M", start_time))
     else:
-        time_str += " "
+        time_str += " " * 8
+    if include_pos:
+        time_str += duration_string(song['position']) + " "
+    else:
+        time_str += " " * 6
     up_to_album = savedString + time_str + duration + title + artist
     album = fixed_length(song['album'], width - 1 - len(up_to_album))
 
