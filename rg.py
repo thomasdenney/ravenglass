@@ -33,7 +33,7 @@ playlist_parser.add_argument("--title", help="Playlist title")
 playlist_parser.add_argument("--file", help="Filename for list of IDs")
 
 singles_parser = subparsers.add_parser("singles", help="Create playlist of single saved songs")
-singles_parser.add_argument("--title", default="Single Songs", help="Playlist title")
+singles_parser.add_argument("--title", default="Single Songs", help="Playlist title (date is appended)")
 singles_parser.add_argument("--limit", default=1, type=int, help="Max saved songs per album")
 singles_parser.add_argument("--library", help="Use a cached library instead")
 singles_parser.add_argument("--dry", action="store_true", help="Prints song IDs and titles rather than creating the playlist")
