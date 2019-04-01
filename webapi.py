@@ -1,9 +1,14 @@
+import datetime
 import requests
 import urllib
 import json
 import shutil
 import songfmt
 from time import strftime, localtime
+from operator import itemgetter
+
+def parse(s):
+    return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ" )
 
 class WebApi:
     def __init__(self, auth):
@@ -47,7 +52,7 @@ class WebApi:
         else:
             print(json.dumps(all_songs, indent=4, sort_keys=True))
 
-    def fetch_library(self, log=False, break_early=False):
+    def fetch_library(self, since=None, log=False, break_early=False):
         headers = { "Authorization": "Bearer " + self.auth.oauth() }
         params = { "offset": 0, "limit": 50 }
         import urllib
@@ -59,7 +64,14 @@ class WebApi:
             r = requests.get(uri, headers=headers)
             if r.status_code == 200:
                 j = r.json()
-                all_songs.extend(j['items'])
+                new_songs = j['items']
+                if since is not None:
+                    filtered = [ s for s in new_songs if parse(s['added_at']) >= since ]
+                    all_songs.extend(filtered)
+                    if len(filtered) != len(new_songs):
+                        break
+                else:
+                    all_songs.extend(new_songs)
                 if 'next' in j and j['next'] != None:
                     uri = j['next']
                     params = None
@@ -83,6 +95,30 @@ class WebApi:
         with open(library_src, "r") as f:
             return json.load(f)
 
+    def update_library(self, library_file, log=False):
+        try:
+            with open(library_file, "r") as f:
+                library = json.load(f)
+        except FileNotFoundError:
+            library = []
+        except json.decoder.JSONDecodeError:
+            library = []
+
+        most_recent = None
+        for saved_track in library:
+            d = parse(saved_track["added_at"])
+            if most_recent is None or d > most_recent:
+                most_recent = d
+
+        new_songs = self.fetch_library(most_recent, log)
+        library.extend(new_songs)
+        library = sorted(library, key=itemgetter("added_at"), reverse=True)
+
+        with open(library_file, "w") as f:
+            json.dump(library, f, indent=4, sort_keys=True)
+
+        return library
+
     def get_user_id(self):
         headers = { "Authorization" : "Bearer " + self.auth.oauth() }
         uri = 'https://api.spotify.com/v1/me'
@@ -99,10 +135,10 @@ class WebApi:
         for ids_chunk in [ids[i:i + 100] for i in range(0, len(ids), 100)]:
             uri = 'https://api.spotify.com/v1/users/%s/playlists/%s/tracks' % (user_id, playlist_id)
             print(requests.post(uri, headers=headers, json={"uris":ids_chunk}).json())
-        print("Added all songs")
+        print("Added {} tracks".format(len(ids)))
 
-    def create_singles_playlist(self, limit=1, title="Single Songs", library_src = None, dry_run=False):
-        all_songs = self.fetch_cached_library(library_src) if library_src != None else self.fetch_library(True, library_src)
+    def create_singles_playlist(self, limit, title, library_src, dry_run=False, log=False):
+        all_songs = self.update_library(library_src, log)
         album_to_songs = {}
         song_id_to_song = {}
         for song in all_songs:

@@ -26,16 +26,16 @@ serve_parser = subparsers.add_parser('serve', help="Run web server for personal 
 watch_parser = subparsers.add_parser('watch', help="Interactive mode")
 
 cache_parser = subparsers.add_parser("cache", help="Cache library as JSON")
-cache_parser.add_argument("--out", help="Destination file")
+cache_parser.add_argument("--out", default="library.json", help="Destination file")
 
 playlist_parser = subparsers.add_parser("playlist", help="Create playlist")
 playlist_parser.add_argument("--title", help="Playlist title")
 playlist_parser.add_argument("--file", help="Filename for list of IDs")
 
 singles_parser = subparsers.add_parser("singles", help="Create playlist of single saved songs")
-singles_parser.add_argument("--title", default="Single Songs", help="Playlist title (date is appended)")
+singles_parser.add_argument("--title", default=None, help="Playlist title (date is appended)")
 singles_parser.add_argument("--limit", default=1, type=int, help="Max saved songs per album")
-singles_parser.add_argument("--library", help="Use a cached library instead")
+singles_parser.add_argument("--library", default="library.json", help="Use a cached library")
 singles_parser.add_argument("--dry", action="store_true", help="Prints song IDs and titles rather than creating the playlist")
 
 save_parser = subparsers.add_parser("save", help="Save the current song")
@@ -179,7 +179,14 @@ if __name__ == "__main__":
         ids = ["spotify:track:" + x.strip() for x in ids]
         api.create_playlist(title, ids)
     elif args.command == "singles":
-        api.create_singles_playlist(args.limit, args.title, args.library, args.dry)
+        if args.title is None:
+            if args.limit == 1:
+                args.title = "Single Songs"
+            elif args.limit == 2:
+                args.title = "Double Songs"
+            else:
+                args.title = "{} Songs".format(args.limit)
+        api.create_singles_playlist(args.limit, args.title, args.library, args.dry, args.verbose)
     elif args.command == "save":
         current = interapp.get_current()
         print_current(current)
